@@ -133,7 +133,8 @@ class CooperativeExecution(object):
         'alpha': float,
         'nodethreshold': list,
         'edgethreshold': list,
-        'exportedges': bool
+        'exportedges': bool,
+        'content': str
     }
 
     def _method_wrapper(self, request, serializer, handler, method, logger):
@@ -295,6 +296,10 @@ class POSTHandler(object):
             return self.pytmapi.STATUS_ERROR
         return storage.insertNGram(ngramobj)
 
+    @value_to_gen
+    def download(self, dataset, path, content):
+        """ download a file """
+        return self.pytmapi.write_user_file(dataset, path, content)
 
 class GETHandler(object):
     """

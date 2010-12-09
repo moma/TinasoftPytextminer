@@ -28,6 +28,8 @@ from shutil import rmtree
 
 from datetime import datetime
 
+import zlib
+
 class PytextminerFileApi(object):
     """
     Handles all the application file on a local filesystem
@@ -165,3 +167,26 @@ class PytextminerFileApi(object):
             )
             return None
         return path
+
+    def write_user_file(self, dataset, path, content):
+        """ write user file """
+        # path = a/b/c/aa.bb.cc
+        fullname = path.split("/")[-1] # fullname = aa.bb.cc
+        ext = fullname.split(".")[-1] # ext = cc
+        userpath = self._get_user_filepath(dataset, ext, name)
+        try:
+            content = zlib.decompress(content)
+        except:
+            # okay, we suppose it was not compressed
+            pass
+        try:
+            f = codecs.open(userpath,"w+b",errors='replace',encoding='utf-8')
+        except:
+            raise IOError("Error when writing user file to "+path+": "+e)
+        try:
+            f.write(content)
+        except Exception, e:
+            raise IOError("Error when writing user file content to "+path+": "+e)
+        finally:
+            f.close()
+        return userpath
