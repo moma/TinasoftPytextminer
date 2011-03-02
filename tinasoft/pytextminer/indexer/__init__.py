@@ -248,9 +248,10 @@ class ArchiveCounter():
         """
         matrix = SymmetricMatrix(termList)
         try:
-            generator = self.storage.selectCorpusGraphPreprocess(period, "NGram")
+            generator = self.storage.select("GraphPreprocessNGram", period)
             while 1:
-                ngi,row = generator.next()
+                id,row = generator.next()
+                ngi = id.split('::')[0]
                 for ngj in row.iterkeys():
                     matrix.set( ngi, ngj, value=row[ngj] )
         except StopIteration, si:

@@ -43,7 +43,7 @@ class Whitelist(PyTextMiner,whitelist.WhitelistFile):
         whitelist.WhitelistFile.__init__(self)
         PyTextMiner.__init__(self, {}, id, label, edges, **metas)
         self.storage = self._get_storage()
-        
+
     def __del__(self):
         del self.storage
 
@@ -90,7 +90,7 @@ class Whitelist(PyTextMiner,whitelist.WhitelistFile):
             ngram.addEdge( 'Corpus', corpus_id, 1 )
         if document_id is not None:
             ngram.addEdge( 'Document', document_id, 1 )
-        if self.storage.updateManyNGram( ngram ) >= self.storage.MAX_INSERT_QUEUE:
+        if self.storage.insertNGram( ngram ) >= self.storage.MAX_INSERT_QUEUE:
             self.storage.flushNGramQueue()
 
     def getContent(self, id=None):
@@ -101,4 +101,3 @@ class Whitelist(PyTextMiner,whitelist.WhitelistFile):
             return self.storage.loadMany("NGram")
         else:
             return self.storage.loadNGram(id)
-

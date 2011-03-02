@@ -1,4 +1,4 @@
-#!/usr/bin/python
+='localhost'#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #  Copyright (C) 2009-2011 CREA Lab, CNRS/Ecole Polytechnique UMR 7656 (Fr)
 #
@@ -20,43 +20,35 @@ __author__="elishowk@nonutc.fr"
 from tinasoft.data import Handler
 from tinasoft.pytextminer import ngram
 
-import sqlite3
 
 from os.path import exists
 from os.path import join
 from os import makedirs
 
-import cPickle as pickle
+from pymongo import Connection
+MONGODB_PORT = 27017
 
 import logging
 _logger = logging.getLogger('TinaAppLogger')
 
-sqlite3.enable_callback_tracebacks(True)
-
 class Backend(Handler):
     """
-    Low-Level sqlite3 database backend
+    Low-Level MongoDB database backend
     """
     options = {
-        'home' : 'db',
         'drop_tables': False
     }
 
-    def __init__(self, path, **opts):
+    def __init__(self, path='localhost', **opts):
         """loads options, connect or create db"""
         self.loadOptions(opts)
         self.path = path
-        ###  mkdirectory
-        if not exists(self.home):
-            makedirs(self.home)
         ### connection
-        self._connect()
+        self._connect(self.path)
         ### empty database if needed
         if self.drop_tables is True:
             _logger.debug("will drop all tables of db %s"%self.path)
             self._drop_tables()
-        ### create  tables if needed
-        self._create_tables()
         ### chacks success
         if self.is_open() is False:
             raise Exception("Unable to open a tinasqlite database")
@@ -65,36 +57,14 @@ class Backend(Handler):
         return self.__open
 
     def _drop_tables(self):
-        try:
-            cur = self._db.cursor()
-            for tabname in self.tables:
-                sql = "DROP TABLE IF EXISTS %s"%tabname
-                cur.execute(sql)
-            self.commit()
-        except Exception, exc:
-            _logger.error("_drop_tables() error : %s"%exc)
-            raise Exception(exc)
+        for coll in self.mongodb.collection_names():
+            self.mongodb.drop_collection(coll)
 
-    def _connect(self):
+    def _connect(self, hostname):
         """connection method, need to have self.home directory created"""
         try:
-            self._db = sqlite3.connect(join(self.home,self.path))
-            # row factory provides named columns
-            self._db.row_factory = sqlite3.Row
+            self.mongodb = Connection.__init__(self, hostname, MONGODB_PORT)
             self.__open = True
-        except Exception, connect_exc:
-            _logger.error("_connect() error : %s"%connect_exc)
-            raise Exception(connect_exc)
-
-    def _create_tables(self):
-        try:
-            cur = self._db.cursor()
-            sql = "PRAGMA SYNCHRONOUS=0;"
-            cur.execute(sql)
-            for tabname in self.tables:
-                sql = "CREATE TABLE IF NOT EXISTS %s (id VARCHAR(256) PRIMARY KEY, pickle BLOB)"%tabname
-                cur.execute(sql)
-            self.commit()
         except Exception, connect_exc:
             _logger.error("_connect() error : %s"%connect_exc)
             raise Exception(connect_exc)
@@ -106,93 +76,27 @@ class Backend(Handler):
         """
         if not self.is_open():
             return
-        self._db.close()
+        del self.mongodb
         self.__open = False
 
-    def commit(self):
-        """
-        commits
-        """
-        try:
-            self._db.commit()
-        except Exception, e:
-            self.rollback()
+    def find_one(self, target, id):
+        return self.mongodb[target].find_one({"_id":id})
 
-    def rollback(self):
-        """
-        rollbacks
-        """
-        self._db.rollback()
-        _logger.warning("rolled back an sql statement")
+    def find(self, target):
+        return self.mongodb[target].find(timeout=False)
 
-    def pickle( self, obj ):
-        return pickle.dumps(obj)
+    def save(self, target, object):
+        return self.mongodb[target].save(object)
 
-    def unpickle( self, data ):
-        if type(data) != str:
-            data = str(data)
-        return pickle.loads(data)
+    def update(self, target, id, update_object_fragment):
+        return self.mongodb[target].update({"_id":id},update_object_fragment)
 
-    def saferead(self, tabname, key):
-        """returns ONE db value or return None"""
-        if type(key) != str:
-            key = str(key)
-        try:
-            cur = self._db.cursor()
-            cur.execute("select pickle from %s where id=?"%tabname, (key,))
-            row = cur.fetchone()
-            if row is not None:
-                return row["pickle"]
-            else:
-                return None
-        except Exception, read_exc:
-            _logger.error( "saferead exception : %s"%read_exc )
-            return None
-
-    def safereadrange(self, tabname):
-        """returns a cursor of a whole table"""
-        try:
-            cur = self._db.cursor()
-            cur.execute("select id, pickle from %s"%tabname)
-            next_val = cur.fetchone()
-            while next_val is not None:
-                yield next_val
-                next_val = cur.fetchone()
-            return
-        except Exception, readrange_exc:
-            _logger.error( "exception during safereadrange on table %s : %s"%(tabname,readrange_exc) )
-            return
-
-    def safewrite( self, tabname, list_of_tuples ):
-        """
-        Pickles a list of tuples
-        then execute many inserts of this transformed list of tuples
-        """
-        pickled_list = [(key,buffer(self.pickle(obj))) for (key, obj) in list_of_tuples]
-        try:
-            cur = self._db.cursor()
-            cur.executemany("insert or replace into %s(id, pickle) values(?,?)"%tabname, pickled_list)
-            self.commit()
-        except Exception, insert_exc:
-            _logger.error( "exception during safewrite on table %s : %s"%(tabname,insert_exc) )
-            self.rollback()
-
-    def safedelete(self, tabname, key):
-        """
-        DELETE an object from database within a transaction
-        """
-        try:
-            cur = self._db.cursor()
-            cur.execute("DELETE FROM %s WHERE id=?"%tabname, (key,))
-            self.commit()
-        except Exception, _exc:
-            _logger.error( "exception during safedelete on table %s : %s"%(tabname,_exc) )
-            self.rollback()
-
+    def remove(self, target, id):
+        return self.mongodb[target].remove({"_id":id})
 
 class Engine(Backend):
     """
-    High level database Engine of Pytextminer
+    High level database Engine of Tinasoft's MongoDB interface
     """
     # max-size to automatically flush insert queues
     MAX_INSERT_QUEUE = 500
@@ -204,7 +108,6 @@ class Engine(Backend):
     ngramindex = []
 
     options = {
-        'home' : 'db',
         'drop_tables': False,
         'tables' : [
             'Corpora',
@@ -212,42 +115,22 @@ class Engine(Backend):
             'Document',
             'NGram',
             'Whitelist',
-            'Cluster',
-            'GraphPreprocessNGram',
-            'GraphPreprocessDocument'
+            'GraphPreprocessNGram'
         ],
     }
 
     def __del__(self):
-        """safely closes db and dbenv"""
-        self.flushQueues()
+        """safely closes db"""
         self.close()
 
     def load(self, id, target, raw=False):
-        read = self.saferead( target, id )
-        if read is not None:
-            if raw is True:
-                return read
-            return self.unpickle(str(read))
-        else:
-            return None
+        return self.find_one(target, id)
 
     def loadMany(self, target, raw=False):
         """
-        returns a generator of tuples (id, pickled_obj)
+        returns a iterator of tuples (id, pickled_obj)
         """
-        cursor = self.safereadrange(target)
-        try:
-            while 1:
-                record = cursor.next()
-                # if cursor is empty
-                if record is None: return
-                if not raw:
-                    yield ( record["id"], self.unpickle(str(record["pickle"])))
-                else:
-                    yield record
-        except StopIteration, si:
-            return
+        return self.find(target, id)
 
     def loadCorpora(self, id, raw=False ):
         return self.load(id, 'Corpora', raw)
@@ -267,19 +150,9 @@ class Engine(Backend):
     def loadWhitelist(self, id, raw=False):
         return self.load(id, 'Whitelist', raw)
 
-    def loadCluster(self, id, raw=False):
-        return self.load(id, 'Cluster', raw)
-
-    def insertMany(self, iter, target):
-        """insert many objects from a list"""
-        if len(iter) != 0:
-            return self.safewrite(target, iter)
-
-    def insert( self, obj, target, id=None ):
+    def insert(self, obj, target, id=None):
         """insert one object given its type"""
-        if id is None:
-            id = obj['id']
-        return self.safewrite( target, [(id, obj)] )
+        return self.save(target, obj)
 
     def insertCorpora(self, obj, id=None ):
         return self.insert( obj, 'Corpora', id )
@@ -287,29 +160,11 @@ class Engine(Backend):
     def insertCorpus(self, obj, id=None ):
         return self.insert( obj, 'Corpus', id )
 
-    def insertManyCorpus(self, iter ):
-        return self.insertMany( iter, 'Corpus' )
-
     def insertDocument(self, obj, id=None ):
         return self.insert( obj, 'Document', id )
 
-    def insertManyDocument(self, iter):
-        return self.insertMany( iter, 'Document' )
-
     def insertNGram(self, obj, id=None ):
-        if id is None:
-            id = obj['id']
-        if id in self.ngramqueueindex:
-            self.flushNGramQueue()
-        stored = self.loadNGram(id)
-        if stored is not None:
-            stored.updateObject(obj)
-            obj = stored
-        # adds object to the INSERT the queue and returns its length
-        return self._ngramQueue(id, obj)
-
-    def insertManyNGram(self, iter ):
-        return self.insertMany( iter, 'NGram' )
+        return self.insert( obj, 'NGram', id )
 
     def insertGraphPreprocess(self, obj, id, type ):
         """
@@ -318,20 +173,11 @@ class Engine(Backend):
         """
         return self.insert( obj, 'GraphPreprocess'+type, id )
 
-    def insertManyGraphPreprocess( self, iter, type ):
-        return self.insertMany( iter, 'GraphPreprocess'+type )
-
     def insertWhitelist(self, obj, id ):
         return self.insert( obj, 'Whitelist', id )
 
-    def insertManyWhitelist( self, iter ):
-        return self.insertMany( iter, 'Whitelist' )
-
     def insertCluster(self, obj, id ):
         return self.insert( obj, 'Cluster', id )
-
-    def insertManyCluster( self, iter ):
-        return self.insertMany( iter, 'Cluster' )
 
     def _neighboursUpdate(self, obj, target):
         """
@@ -352,7 +198,7 @@ class Engine(Backend):
                 else:
                     _logger.warning("missing neighbour %s for node %s"%(neighbourid,obj.id))
 
-    def update( self, obj, target, redondantupdate=False ):
+    def update_node( self, obj, target, redondantupdate=False ):
         """updates an object and its edges"""
         stored = self.load( obj['id'], target )
         if stored is not None:
@@ -364,37 +210,33 @@ class Engine(Backend):
         obj._cleanEdges(storage=self)
         self.insert( obj, target )
 
-    def updateWhitelist( self, obj, redondantupdate=False ):
+    def updateWhitelist(self, obj, redondantupdate=False):
         """updates a Whitelist and associations"""
-        self.update( obj, 'Whitelist', redondantupdate )
+        self.update_node(obj, 'Whitelist', redondantupdate)
 
-    def updateCluster( self, obj, redondantupdate=False ):
-        """updates a Cluster and associations"""
-        self.update( obj, 'Cluster', redondantupdate )
-
-    def updateCorpora( self, obj, redondantupdate=False ):
+    def updateCorpora(self, obj, redondantupdate=False):
         """updates a Corpora and associations"""
-        self.update( obj, 'Corpora', redondantupdate )
+        self.update_node(obj, 'Corpora', redondantupdate)
 
-    def updateCorpus( self, obj, redondantupdate=False ):
+    def updateCorpus( self, obj, redondantupdate=False):
         """updates a Corpus and associations"""
-        self.update( obj, 'Corpus', redondantupdate )
+        self.update_node(obj, 'Corpus', redondantupdate)
 
     def updateDocument( self, obj, redondantupdate=False ):
         """updates a Document and associations"""
-        self.update( obj, 'Document', redondantupdate )
+        self.update_node(obj, 'Document', redondantupdate)
 
     def updateNGram( self, obj, redondantupdate=False ):
-        """
-        updates a ngram and associations
-        """
-        self.update( obj, 'NGram', redondantupdate )
-        
+        """updates a ngram and associations"""
+        self.update_node(obj, 'NGram', redondantupdate)
+
     def updateGraphPreprocess(self, period, category, id, row):
         """
         updates a graph preprocess row
         transaction queue grouping by self.MAX_INSERT_QUEUE
         """
+        for neighbourid, value in row.iteritems():
+            self.
         if category not in self.graphpreprocessqueue:
             self.graphpreprocessqueue[category] = []
         self.graphpreprocessqueue[category] += [(period+"::"+id, row)]
@@ -405,53 +247,21 @@ class Engine(Backend):
         else:
             return queuesize
 
-    def flushNGramQueue(self):
-        self.insertManyNGram( self.ngramqueue )
-        self.ngramqueue = []
-        self.ngramqueueindex = []
-
-    def flushGraphPreprocessQueue(self):
-        for category, queue in self.graphpreprocessqueue.iteritems():
-            self.insertManyGraphPreprocess(queue, category)
-            self.graphpreprocessqueue[category]=[]
-
-    def flushQueues(self):
-        self.flushGraphPreprocessQueue()
-        self.flushNGramQueue()
-        self.ngramindex = []
-        _logger.debug("flushed insert queues for database %s"%self.path)
-
-    def _ngramQueue( self, id, ng ):
-        """
-        add a ngram to the queue and session index
-        """
-        self.ngramqueueindex += [id]
-        self.ngramqueue += [(id, ng)]
-        self.ngramindex += [id]
-        queue = len( self.ngramqueue )
-        return queue
-
     def select( self, tabname, key=None, raw=False ):
         """
         Yields raw or unpickled tuples (key, obj)
         from a table filtered with a range of key prefix
         """
-        cursor = self.safereadrange( tabname )
-        try:
-            while 1:
-                record = cursor.next()
-                # if cursor is empty
-                if record is None: return
-                # if the record does not belong to the corpus_id
-                if key is not None and record["id"].startswith(key) is False:
-                    continue
-                # otherwise yields the next value
-                if raw is True:
-                    yield record
-                else:
-                    yield ( record["id"], self.unpickle(str(record["pickle"])))
-        except StopIteration, si:
-            return
+        if key is not None:
+            startkey = re.compile("^%s.*"%key)
+            cursor = self.mongodb[target].find({"_id":{"$regex":startkey}},timeout=False)
+        else:
+            cursor = self.find(tabname)
+        for record in cursor:
+             if raw is True:
+                yield record
+            else:
+                yield (record["_id"], record)
 
     def delete(self, id, target, redondantupdate=False):
         """
@@ -467,7 +277,7 @@ class Engine(Backend):
                     if id in neighbour_obj.edges[target]:
                         del neighbour_obj.edges[target][id]
                     self.insert(neighbour_obj, cat)
-        self.safedelete(target, id)
+        self.remove(target, id)
 
     def deleteNGramForm(self, form, ngid, is_keyword):
         """
@@ -480,7 +290,7 @@ class Engine(Backend):
         if form in ng['edges']['postag']:
             del ng['edges']['postag'][form]
         self.insertNGram(ng)
-        self.flushNGramQueue()
+
         doc_count = 0
         for doc_id in ng['edges']['Document'].keys():
             doc = self.loadDocument(doc_id)
@@ -506,9 +316,9 @@ class Engine(Backend):
             stored_ngram.addForm(form.split(" "), ["None"])
             # only updates form attributes
             new_ngram = stored_ngram
+
         # updated NGram
         self.insertNGram(new_ngram)
-        self.flushNGramQueue()
         # first and only dataset
         dataset_gen = self.loadMany("Corpora")
         (dataset_id, dataset) = dataset_gen.next()

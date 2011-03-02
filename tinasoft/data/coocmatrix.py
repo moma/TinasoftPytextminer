@@ -33,15 +33,16 @@ class Exporter(basecsv.Exporter):
                 self.writeRow([ ngid, ng2, cooc, corpusid ])
                 countcooc += 1
         return countcooc
-        
+
     def export_from_storage(self, storage, periods, minCooc=1):
         """exports a reconstitued cooc matrix from storage, applying whitelist filtering"""
         totalcooc = 0
         for corpusid in periods:
             try:
-                generator = storage.selectCorpusGraphPreprocess(corpusid, "NGram")
+                generator = self.storage.select("GraphPreprocessNGram", period)
                 while 1:
-                    ng1, row = generator.next()
+                    id,row = generator.next()
+                    ng1 = id.split('::')[0]
                     totalcooc += self._write_cooc_row(ng1, row, corpusid, minCooc)
                     yield totalcooc
             except StopIteration, si:
@@ -60,4 +61,3 @@ class Exporter(basecsv.Exporter):
         except StopIteration, si:
             _logger.debug("Exported %d non-zeros cooccurrences for the period %s"%(totalcooc, period))
             return self.filepath
-
