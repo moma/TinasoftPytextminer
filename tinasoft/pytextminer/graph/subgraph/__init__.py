@@ -134,10 +134,11 @@ class NgramGraphPreprocess(NgramGraph):
         """
         submatrix = Matrix( document['edges']['NGram'].keys(), valuesize=float )
         # only loop on half of the matrix === symmetric
-        for (ngi, ngj) in itertools.combinations(document['edges']['NGram'].keys(), 2):
-            # replicates the symmetric cooc value
-            submatrix.set( ngi, ngj, value=1 )
-            submatrix.set( ngj, ngi, value=1 )
+        if len(document['edges']['NGram'].keys()) >= 2:
+            for (ngi, ngj) in itertools.combinations(document['edges']['NGram'].keys(), 2):
+                # replicates the symmetric cooc value
+                submatrix.set( ngi, ngj, value=1 )
+                submatrix.set( ngj, ngi, value=1 )
         return submatrix
 
     def generator(self):
