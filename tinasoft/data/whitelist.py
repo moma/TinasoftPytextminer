@@ -64,7 +64,6 @@ class Importer(basecsv.Importer, BaseImporter):
         ngramqueue=[]
         for row in self:
             if row is None: continue
-            
             try:
                 status = self._coerce_unicode( row[self.filemodel.columns[0][1]] ).strip()
                 ### breaks if not whitelisted
@@ -92,9 +91,7 @@ class Importer(basecsv.Importer, BaseImporter):
             
         self.file.close()
         ### insert/update document
-        #self.storage.flushNGramQueue()
         self.whitelist.storage.insertManyNGram( ngramqueue )
-        #self.whitelist.storage.flushNGramQueue()
         return self.whitelist
 
 class Exporter(basecsv.Exporter):
@@ -111,12 +108,12 @@ class Exporter(basecsv.Exporter):
 
         corpusCache = {}
         corporaObj = newwl.storage.loadCorpora(corporaId)
-        if corporaObj is None:
-            raise Exception("corpora %s not found, impossible to export whitelist"%newwl.label)
-            return
-        
-        for corpusId in corporaObj['edges']['Corpus'].iterkeys():
-            corpusCache[corpusId] = newwl.storage.loadCorpus(corpusId)
+#        if corporaObj is None:
+#            raise Exception("corpora %s not found, impossible to export whitelist"%newwl.label)
+#            return
+        if corporaObj is not None:
+            for corpusId in corporaObj['edges']['Corpus'].iterkeys():
+                corpusCache[corpusId] = newwl.storage.loadCorpus(corpusId)
 
         # cursor of Whitelist NGrams db
         ngramgenerator = newwl.getNGram()
@@ -145,6 +142,7 @@ class Exporter(basecsv.Exporter):
                 maxperiodid = maxnormalizedperiodid = None
 
                 for periodid, totalperiod in ng['edges']['Corpus'].iteritems():
+                    if corporaObj is None: continue
                     totaldocs =  len(corpusCache[periodid]['edges']['Document'].keys())
                     if totaldocs == 0: continue
                     # updates both per period max occs
