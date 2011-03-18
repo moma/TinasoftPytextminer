@@ -25,7 +25,7 @@ __all__ = ['tinasqlite','basecsv','whitelist','tinacsv','source','gexf','medline
 import sys
 import codecs
 
-class Handler (object):
+class Handler(object):
     """
         Base class for classes
             tinasoft.data.*.Engine
