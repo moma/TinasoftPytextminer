@@ -46,6 +46,10 @@ class Importer(object):
     A CSV reader which will iterate over lines in the CSV file "f",
     which is encoded in the given encoding.
     """
+    options = {
+        'dialect': 'excel',
+        'encoding': 'utf_8'
+    }
 
     def __init__(self, path, **kwargs):
         # gets columns names
