@@ -64,7 +64,6 @@ class Importer(basecsv.Importer, BaseImporter):
         ngramqueue=[]
         for row in self:
             if row is None: continue
-            
             try:
                 status = self._coerce_unicode( row[self.filemodel.columns[0][1]] ).strip()
                 ### breaks if not whitelisted
@@ -92,9 +91,7 @@ class Importer(basecsv.Importer, BaseImporter):
             
         self.file.close()
         ### insert/update document
-        #self.storage.flushNGramQueue()
         self.whitelist.storage.insertManyNGram( ngramqueue )
-        #self.whitelist.storage.flushNGramQueue()
         return self.whitelist
 
 class Exporter(basecsv.Exporter):
@@ -111,11 +108,12 @@ class Exporter(basecsv.Exporter):
 
         corpusCache = {}
         corporaObj = newwl.storage.loadCorpora(corporaId)
+        
         if corporaObj is None:
             #raise Exception("corpora %s not found, impossible to export whitelist"%newwl.label)
             #return
             logging.warning("no corpora found in database, export will be partial")
-        
+
         if corporaObj is not None:
             for corpusId in corporaObj['edges']['Corpus'].iterkeys():
                 corpusCache[corpusId] = newwl.storage.loadCorpus(corpusId)
@@ -140,6 +138,7 @@ class Exporter(basecsv.Exporter):
                 occsn = occs**len(ng['content'])
                 maxperiod = maxnormalizedperiod = lastmax = lastnormmax = 0.0
                 maxperiodid = maxnormalizedperiodid = None
+
                 if corporaObj is not None:
                     for periodid, totalperiod in ng['edges']['Corpus'].iteritems():
                         totaldocs =  len(corpusCache[periodid]['edges']['Document'].keys())
@@ -154,6 +153,7 @@ class Exporter(basecsv.Exporter):
                         if lastnormmax >= maxnormalizedperiod:
                             maxnormalizedperiod = lastnormmax
                             maxnormalizedperiodid = periodid
+
                         
                 separator = " "+self.filemodel.forms_separator+" "
 

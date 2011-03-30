@@ -16,6 +16,7 @@
 
 
 from tinasoft.data import Exporter as BaseExporter
+from tinasoft.data import Importer as BaseImporter
 
 import codecs
 import csv
@@ -41,19 +42,24 @@ class UTF8Recoder(object):
         encodedline = self.utf8encoder( self.decodedreader.next(), 'ignore' )
         return encodedline[0]
 
-class Importer(object):
+class Importer(BaseImporter):
     """
     A CSV reader which will iterate over lines in the CSV file "f",
     which is encoded in the given encoding.
     """
+    options = {
+        'dialect': 'excel',
+        'encoding': 'utf_8'
+    }
 
     def __init__(self, path, **kwargs):
+        BaseImporter.__init__(self, path, **kwargs)
         # gets columns names
         f1 = self.open( path )
         if f1 is None:
             return
         
-        tmp = csv.reader( f1, dialect=kwargs['dialect'])
+        tmp = csv.reader( f1, dialect=self.dialect)
         #tmp = csv.reader( f1, dialect=kwargs['dialect'], quoting=csv.QUOTE_NONNUMERIC )
         self.fieldnames = tmp.next()
         del f1, tmp
@@ -62,7 +68,7 @@ class Importer(object):
         self.reader = csv.DictReader(
             recodedcsvfile,
             fieldnames=self.fieldnames,
-            dialect=kwargs['dialect'],
+            dialect=self.dialect,
             restkey="unknown",
             restval=""
         )
