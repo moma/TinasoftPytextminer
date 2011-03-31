@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__="1.0alpha"
+__version__="1.0beta"
 
 __url__="http://tinasoft.eu"
 __longdescr__="A text-mining python module producing thematic networks"

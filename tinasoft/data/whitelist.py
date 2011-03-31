@@ -99,7 +99,7 @@ class Exporter(basecsv.Exporter):
 
     filemodel = WhitelistFile()
 
-    def write_whitelist(self, newwl, corporaId, minoccs=1, status=None):
+    def write_whitelist(self, newwl, corporaId, minoccs=0, status=None):
         """
         Writes a Whitelist object to a file
         """
@@ -108,9 +108,12 @@ class Exporter(basecsv.Exporter):
 
         corpusCache = {}
         corporaObj = newwl.storage.loadCorpora(corporaId)
-#        if corporaObj is None:
-#            raise Exception("corpora %s not found, impossible to export whitelist"%newwl.label)
-#            return
+        
+        if corporaObj is None:
+            #raise Exception("corpora %s not found, impossible to export whitelist"%newwl.label)
+            #return
+            logging.warning("no corpora found in database, export will be partial")
+
         if corporaObj is not None:
             for corpusId in corporaObj['edges']['Corpus'].iterkeys():
                 corpusCache[corpusId] = newwl.storage.loadCorpus(corpusId)
@@ -120,17 +123,12 @@ class Exporter(basecsv.Exporter):
         try:
             while 1:
                 ngid, ng = ngramgenerator.next()
-                
                 # sums all NGram-Corpus occurrences to get total occs
                 occs = sum( ng['edges']['Corpus'].values() )
-                #_logger.debug("sum = %d"%occs)
-                # filters ngram by total occurrences
                 if occs < minoccs:
-                    #print "sum = %d"%occs
-                    #print ng['edges']['Corpus'].keys()
                     continue
-
-                ng.updateMajorForm()
+                if isinstance(ng, ngram.NGram):
+                    ng.updateMajorForm()
                 if status is None:
                     ng['status'] = ""
                 else:
@@ -141,20 +139,21 @@ class Exporter(basecsv.Exporter):
                 maxperiod = maxnormalizedperiod = lastmax = lastnormmax = 0.0
                 maxperiodid = maxnormalizedperiodid = None
 
-                for periodid, totalperiod in ng['edges']['Corpus'].iteritems():
-                    if corporaObj is None: continue
-                    totaldocs =  len(corpusCache[periodid]['edges']['Document'].keys())
-                    if totaldocs == 0: continue
-                    # updates both per period max occs
-                    lastmax = float(totalperiod) / float(totaldocs)
-                    if lastmax >= maxperiod:
-                        maxperiod = lastmax
-                        maxperiodid = periodid
+                if corporaObj is not None:
+                    for periodid, totalperiod in ng['edges']['Corpus'].iteritems():
+                        totaldocs =  len(corpusCache[periodid]['edges']['Document'].keys())
+                        if totaldocs == 0: continue
+                        # updates both per period max occs
+                        lastmax = float(totalperiod) / float(totaldocs)
+                        if lastmax >= maxperiod:
+                            maxperiod = lastmax
+                            maxperiodid = periodid
 
-                    lastnormmax = float(totalperiod**len(ng['content'])) / float(totaldocs)
-                    if lastnormmax >= maxnormalizedperiod:
-                        maxnormalizedperiod = lastnormmax
-                        maxnormalizedperiodid = periodid
+                        lastnormmax = float(totalperiod**len(ng['content'])) / float(totaldocs)
+                        if lastnormmax >= maxnormalizedperiod:
+                            maxnormalizedperiod = lastnormmax
+                            maxnormalizedperiodid = periodid
+
                         
                 separator = " "+self.filemodel.forms_separator+" "
 
@@ -168,8 +167,8 @@ class Exporter(basecsv.Exporter):
                 
                 row = [
                     unicode(ng['status']),
-                    unicode(ng.label),
-                    unicode(ng.postag),
+                    unicode(ng['label']),
+                    unicode(ng['postag']),
                     int(occs),
                     unicode(forms),
                     len(ng['content']),
