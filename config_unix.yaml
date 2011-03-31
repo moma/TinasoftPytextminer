@@ -15,6 +15,7 @@ general:
     whitelist_directory: 'whitelists'
     source_file_directory: 'source_files'
     userstopwords: 'user_stopwords.csv'
+    userwhitelist: 'user_whitelist.csv'
     # stopwords are under share
     stopwords: 'stopwords/en.txt'
 # extraction settings
