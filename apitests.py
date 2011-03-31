@@ -24,7 +24,9 @@ from tinasoft import PytextminerApi
 
 
 class PytextminerApiTest(unittest.TestCase):
-
+    """
+    Base test class
+    """
     def setUp(self):
         self.tinasoft = tinasoftSingleton
         self.datasetId = argument3
@@ -131,6 +133,8 @@ def usage():
     print " python apitests.py IndexFile configuration_file_path source_filename source_file_format dataset_name whitelist_path\n"
     print " python apitests.py GenerateGraph configuration_file_path ngram_proximity_name document_proximity_name dataset_name period\n"
     print " python apitests.py IndexArchive configuration_file_path source_filename source_file_format dataset_name whitelist_path period\n"
+    print " python apitests.py ExportCoocMatrix configuration_file_path
+    dataset_name\n"
 
 if __name__ == '__main__':
     print sys.argv
@@ -183,6 +187,15 @@ if __name__ == '__main__':
             print e
             usage()
             exit()
+    if testclass in ['ExportCoocMatrix']:
+        try:
+            argument3 = sys.argv[3]
+            del sys.argv[2:]
+        except Exception, e:
+            print e
+            usage()
+            exit()
+
 
     tinasoftSingleton = PytextminerApi(confFile)
     unittest.main()
