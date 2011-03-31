@@ -233,8 +233,9 @@ class PytextminerFlowApi(PytextminerFileApi):
             yield self.STATUS_ERROR
             return
         except StopIteration:
+            master_user_whitelist = self._import_whitelist(self.config['general']['userwhitelist'])
             whitelist_exporter = Writer("whitelist://"+outpath)
-            whitelist_exporter.write_whitelist(newwl, corporaObj.id, minoccs=minoccs)
+            whitelist_exporter.write_whitelist(newwl, corporaObj.id, minoccs=minoccs, userwhitelist=master_user_whitelist)
             yield abspath(outpath)
             return
 
@@ -650,9 +651,7 @@ class PytextminerFlowApi(PytextminerFileApi):
                 'cooccurrences',
                 "%s-export_cooc.txt"%"+".join(periods)
             )
-        whitelist = None
-        if whitelistpath is not None:
-            whitelist = self._import_whitelist(whitelistpath)
+
         exporter = Writer('coocmatrix://'+outpath)
         # is a generator
         return exporter.export_from_storage( storage, periods, minCooc )
@@ -661,7 +660,6 @@ class PytextminerFlowApi(PytextminerFileApi):
             self,
             whitelistpath,
             dataset = None,
-            userstopwords = None,
             dialect="excel",
             encoding="utf_8"
         ):

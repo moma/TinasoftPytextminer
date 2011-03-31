@@ -99,7 +99,7 @@ class Exporter(basecsv.Exporter):
 
     filemodel = WhitelistFile()
 
-    def write_whitelist(self, newwl, corporaId, minoccs=0, status=None):
+    def write_whitelist(self, newwl, corporaId, minoccs=0, status=None, userwhitelist=None):
         """
         Writes a Whitelist object to a file
         """
@@ -130,7 +130,10 @@ class Exporter(basecsv.Exporter):
                 if isinstance(ng, ngram.NGram):
                     ng.updateMajorForm()
                 if status is None:
-                    ng['status'] = ""
+                    if userwhitelist is not None and userwhitelist.test(ng):
+                        ng['status'] = "w"
+                    else:
+                        ng['status'] = ""
                 else:
                     ng['status'] = status
 
