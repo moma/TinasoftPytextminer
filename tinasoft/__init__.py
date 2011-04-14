@@ -257,46 +257,49 @@ class PytextminerFlowApi(PytextminerFileApi):
         try:
             sourcefilename = path
             path = self._get_sourcefile_path(path)
-
-            corporaObj = corpora.Corpora(dataset)
-            importedwl = self._import_whitelist(whitelistpath)
-
-            corporaObj.addEdge('Whitelist', importedwl['label'], whitelistpath)
-            corporaObj.addEdge('Source', sourcefilename, abspath(path))
-
-            storage = self.get_storage(dataset, create=True, drop_tables=False)
-            if storage == self.STATUS_ERROR:
-                yield self.STATUS_ERROR
-                return
-
-            extract = extractor.Extractor(
-                self.config['datasets'],
-                path,
-                format,
-                storage,
-                corporaObj,
-                [importedwl],
-                stemmer.Identity(),
-                tokenizer.NLemmaTokenizer
-            )
-            extractorGenerator = extract.index()
-            
-            while 1:
-                extractorGenerator.next()
-                yield self.STATUS_RUNNING
         except IOError, ioe:
             self.logger.error("%s"%ioe)
             yield self.STATUS_ERROR
             raise ioe
             return
+
+        corporaObj = corpora.Corpora(dataset)
+        importedwl = self._import_whitelist(whitelistpath)
+
+        corporaObj.addEdge('Whitelist', importedwl['label'], whitelistpath)
+        corporaObj.addEdge('Source', sourcefilename, abspath(path))
+
+        storage = self.get_storage(dataset, create=True, drop_tables=False)
+        if storage == self.STATUS_ERROR:
+            yield self.STATUS_ERROR
+            return
+
+        extract = extractor.Extractor(
+            self.config['datasets'],
+            path,
+            format,
+            storage,
+            corporaObj,
+            [importedwl],
+            stemmer.Identity(),
+            tokenizer.NLemmaTokenizer
+        )
+        extractorGenerator = extract.index()
+        try:
+            while 1:
+                extractorGenerator.next()
+                yield self.STATUS_RUNNING
         except StopIteration:
-            del storage
-            preprocessgen = self.graph_preprocess(dataset)
-            try:
-                while 1:
-                    yield preprocessgen.next()
-            except StopIteration:
-                pass
+            pass
+        del storage
+        preprocessgen = self.graph_preprocess(dataset)
+        try:
+            while 1:
+                yield self.STATUS_RUNNING
+                preprocessgen.next()
+        except StopIteration:
+            pass
+
         yield extract.duplicate
         return
 
@@ -335,16 +338,19 @@ class PytextminerFlowApi(PytextminerFileApi):
         storage = self.get_storage(dataset, create=True, drop_tables=False)
         if storage == self.STATUS_ERROR:
             yield self.STATUS_ERROR
+            self.logger.error("unable connect to the database of dataset %s"%dataset)
             return
 
         yield self.STATUS_RUNNING
         ngramgraphconfig = self.config['datamining']['NGramGraph']
         datasetObj = storage.loadCorpora(dataset)
 
-        ### cooccurrences calculated for each period
+        ### cooccurrences are calculated for each period
         for corpusid in datasetObj['edges']['Corpus'].keys():
             period = storage.loadCorpus( corpusid )
-            if period is None: continue
+            if period is None:
+                self.logger.warning("in graph_preprocess() : period %s not found in database"%corpusid)
+                continue
             ngram_index = set( period.edges['NGram'].keys() )
             doc_index = set( period.edges['Document'].keys() )
             if len(ngram_index) == 0:
@@ -385,20 +391,21 @@ class PytextminerFlowApi(PytextminerFileApi):
                     yield self.STATUS_RUNNING
                     ngramsubgraph_gen.next()
             except StopIteration:
-                self.logger.debug("exporting master whitelist")
-                whitelistlabel = "%s_master"%datasetObj['id']
-                outpath = self._get_whitelist_filepath(whitelistlabel)
-                # this whitelist == dataset
-                newwl = whitelist.Whitelist(whitelistlabel, whitelistlabel)
-                # dataset's storage == master whitelist's storage
-                del newwl.storage
-                newwl.storage = storage
-                yield self.STATUS_RUNNING
-                # exports the dataset's whitelist
-                whitelist_exporter = Writer("whitelist://"+outpath)
-                yield abspath( whitelist_exporter.write_whitelist(newwl, datasetObj['id'], status="w"))
-                return
+                self.logger.debug("graph_preprocess() done for period %s"%corpusid)
 
+        self.logger.debug("exporting master whitelist")
+        whitelistlabel = "%s_master"%datasetObj['id']
+        outpath = self._get_whitelist_filepath(whitelistlabel)
+        # this whitelist == dataset
+        newwl = whitelist.Whitelist(whitelistlabel, whitelistlabel)
+        # dataset's storage == master whitelist's storage
+        del newwl.storage
+        newwl.storage = storage
+        yield self.STATUS_RUNNING
+        # exports the dataset's whitelist
+        whitelist_exporter = Writer("whitelist://"+outpath)
+        yield abspath( whitelist_exporter.write_whitelist(newwl, datasetObj['id'], status="w"))
+        return
 
     def generate_graph(self,
             dataset,
@@ -737,10 +744,6 @@ class PytextminerApi(PytextminerFlowApi):
 
     def index_file(self, *arg, **kwargs):
         generator = super(PytextminerApi, self).index_file(*arg, **kwargs)
-        return self._eraseFlow( generator )
-
-    def graph_preprocess(self, *arg, **kwargs):
-        generator = super(PytextminerApi, self).graph_preprocess(*arg, **kwargs)
         return self._eraseFlow( generator )
 
     def generate_graph(self, *arg, **kwargs):
