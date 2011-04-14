@@ -133,8 +133,8 @@ def usage():
     print " python apitests.py IndexFile configuration_file_path source_filename source_file_format dataset_name whitelist_path\n"
     print " python apitests.py GenerateGraph configuration_file_path ngram_proximity_name document_proximity_name dataset_name period\n"
     print " python apitests.py IndexArchive configuration_file_path source_filename source_file_format dataset_name whitelist_path period\n"
-    print " python apitests.py ExportCoocMatrix configuration_file_path
-    dataset_name\n"
+    print " python apitests.py ExportCoocMatrix configuration_file_path\n"
+
 
 if __name__ == '__main__':
     print sys.argv
