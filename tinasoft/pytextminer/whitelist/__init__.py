@@ -59,14 +59,16 @@ class Whitelist(PyTextMiner):
         """
         Identifies an NGram in the whitelist
         """
+        # NG obj submitted
         if isinstance(ng, ngram.NGram) is True:
-            # NG obj submitted
             if ng['id'] in self['edges']['NGram']: return True
-            else: return False
-        if isinstance(ng, str) is True or isinstance(ng, unicode) is True:
-            # NG ID submitted
+            fine_search = False
+            for form in ng['edges']['label'].keys():
+                if form in self['edges']['form_label'].values(): fine_search |= True
+            return fine_search
+        # NG ID submitted
+        elif isinstance(ng, str) is True or isinstance(ng, unicode) is True:
             if ng in self['edges']['NGram']: return True
-            else: return False
         return False
 
     def _get_storage(self):
