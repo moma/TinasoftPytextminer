@@ -22,8 +22,6 @@ from tinasoft.pytextminer import document, corpus
 import logging
 _logger = logging.getLogger('TinaAppLogger')
 
-from hashlib import sha256
-
 class Record(dict):
     """A dictionary holding information from a Medline record.
     All data are stored under the mnemonic appearing in the Medline
