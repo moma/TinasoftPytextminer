@@ -18,7 +18,7 @@ __author__="elishowk@nonutc.fr"
 
 from tinasoft.pytextminer import PyTextMiner
 from tinasoft.pytextminer import ngram
-from tinasoft.data import whitelist, Engine
+from tinasoft.data import Engine
 
 import logging
 _logger = logging.getLogger('TinaAppLogger')
@@ -27,7 +27,7 @@ import tempfile
 from os.path import split
 
 
-class Whitelist(PyTextMiner, whitelist.WhitelistFile):
+class Whitelist(PyTextMiner):
     """
     Whitelist class
     StopNGram edges represent a session's user stopwords
@@ -35,8 +35,6 @@ class Whitelist(PyTextMiner, whitelist.WhitelistFile):
     """
 
     def __init__(self, id, label, edges=None, **metas):
-        # double heritage
-        whitelist.WhitelistFile.__init__(self)
         PyTextMiner.__init__(self, {}, id, label, edges, **metas)
         ### same database as tinasoft, but temp
         self.storage = self._get_storage()
