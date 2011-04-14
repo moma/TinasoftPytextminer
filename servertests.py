@@ -1,4 +1,3 @@
-import json
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #  Copyright (C) 2009-2011 CREA Lab, CNRS/Ecole Polytechnique UMR 7656 (Fr)
@@ -184,38 +183,7 @@ class DeleteOneNGram(ServerTest):
             )
         else:
             print "Could NOT test case : Document-NGram == 1 and Corpus-NGram == 1, try another Corpus"
-
-#        print "test case : Document-NGram > 1 and Corpus-NGram > 1"
-#        if documentObj3 is not None:
-#            updateDocumentObj3 = self.deleteNGramFromDocument(documentObj3.id, ngramObj3)
-#            updateNgramObj3 = getObject(self.connection, self.headers, 'ngram', self.datasetId, ngid3)
-#            print "testing that Document-NGram edge was decremented"
-#            self.failUnlessEqual(\
-#                updateDocumentObj3['edges']['NGram'][ngid3],\
-#                documentObj3['edges']['NGram'][ngid3]-1,\
-#                "Document %s to NGram %s was NOT decremented "%(documentObj3.id, ngid3)\
-#            )
-#            self.failUnlessEqual(\
-#                updateDocumentObj3['edges']['NGram'][ngid3],\
-#                updateNgramObj3['edges']['Document'][documentObj3.id],\
-#                "NGram %s to Document %s NOT equal "%(ngid3, documentObj3.id)\
-#            )
-#
-#            corpusObj3 = getObject(self.connection, self.headers, 'corpus', self.datasetId, self.period)
-#            print "testing that Corpus-NGram edge was decremented"
-#            self.failUnlessEqual(\
-#                corpusObj3['edges']['NGram'][ngid3],\
-#                corpusObj['edges']['NGram'][ngid3],\
-#                "Corpus %s to NGram %s edge was NOT decremented"%(self.period, ngid3)\
-#            )
-#            self.failUnlessEqual(\
-#                corpusObj3['edges']['NGram'][ngid3],\
-#                updateNgramObj3['edges']['Corpus'][corpusObj3.id],\
-#                "NGram %s to Corpus %s NOT equal "%(ngid3, corpusObj3.id)\
-#            )
-#        else:
-#            print "Could NOT test case : Document-NGram > 1 and Corpus-NGram > 1, try another Corpus"
-
+            
     def selectMulti(self, corpusObj):
         for docid in corpusObj['edges']['Document'].keys():
             documentObj = getObject(self.connection, self.headers, 'document', self.datasetId, docid)
@@ -506,6 +474,8 @@ def usage():
     print " python servertests.py ExtractFile source_filename source_file_format dataset_name whitelist_out_path\n"
     print " python servertests.py IndexFile source_filename source_file_format dataset_name whitelist_path\n"
     print " python servertests.py GenerateGraph dataset_name period\n"
+    print " python servertests.py NGramForm dataset_name period label\n"
+    print " python servertests.py DeleteOneNGram dataset_name period label\n"
     print " python servertests.py TestGraph dataset_name period\n"
 
 
