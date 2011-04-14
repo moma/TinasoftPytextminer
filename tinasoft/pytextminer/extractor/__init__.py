@@ -16,7 +16,7 @@
 
 __author__="elishowk@nonutc.fr"
 
-from tinasoft.pytextminer import corpus, tagger, tokenizer, whitelist, stemmer
+from tinasoft.pytextminer import corpus, tagger, tokenizer, stemmer
 from tinasoft.data import Reader, Writer
 
 import re
@@ -38,8 +38,7 @@ class Extractor():
         corpora,
         filters,
         stemmer,
-        tokenizer,
-        whitelist=None ):
+        tokenizer ):
         """
         Reads documents, extracts NGrams, filters and fills the database
         """
@@ -51,7 +50,7 @@ class Extractor():
         self.filters = filters
         self.stemmer = stemmer
         self.tokenizer = tokenizer
-        self.whitelist = whitelist
+
         # instanciate the tagger, takes times on learning if not already pickled
         self.tagger = tagger.TreeBankPosTagger(
             training_corpus_size = self.config['training_tagger_size'],
@@ -148,8 +147,7 @@ class Extractor():
                     self.config,
                     self.filters,
                     self.tagger,
-                    self.stemmer,
-                    self.whitelist
+                    self.stemmer
                 )
                 self._linkAndStore(docngrams, document, corpus['id'])
                 doccount += 1

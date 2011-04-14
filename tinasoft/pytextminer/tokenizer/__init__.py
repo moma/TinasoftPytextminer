@@ -182,7 +182,7 @@ class NGramTokenizer(RegexpTokenizer):
         return ngrams
 
     @staticmethod
-    def extract(doc, config, filters, tagger, stemmer, whitelist=None):
+    def extract(doc, config, filters, tagger, stemmer):
         """
         sanitizes content and label texts
         tokenizes it
