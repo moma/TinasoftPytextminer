@@ -18,7 +18,8 @@ __author__ = "elishowk@nonutc.fr"
 
 from tinasoft.data import basecsv
 from tinasoft.data import Importer as BaseImporter
-from tinasoft.pytextminer import ngram
+from tinasoft.pytextminer import ngram, whitelist
+
 # tinasoft's logger
 import logging
 _logger = logging.getLogger('TinaAppLogger')
@@ -41,7 +42,8 @@ class WhitelistFile(object):
         ("maxperiodoccsn", "max occs  ^ length per period"),
         ("maxperiodn", "max occs ^ length period id"),
         ("periods", "periods"),
-        ("documents", "documents")
+        ("documents", "documents"),
+        ("ngid", "ngram db id")
     ]
     accept = "w"
     refuse = "s"
@@ -66,7 +68,7 @@ class Importer(basecsv.Importer, BaseImporter):
             if row is None: continue
             try:
                 status = self._coerce_unicode( row[self.filemodel.columns[0][1]] ).strip()
-                ### breaks if not whitelisted
+                ### breaks if ngram has not a whitelisted status
                 if status != self.filemodel.accept: continue
                 label = self._coerce_unicode( row[self.filemodel.columns[1][1]] ).strip()
                 forms_labels = [self._coerce_unicode( form ).strip() for form in row[self.filemodel.columns[4][1]].split( self.filemodel.forms_separator )]
@@ -84,13 +86,12 @@ class Importer(basecsv.Importer, BaseImporter):
                 self.whitelist.addEdge( "NGram", formobj['id'], ngid )
                 ngobj.addForm(formtokens)
             # stores the NGram into whitelist storage
-            #self.whitelist.addNGram( ngobj )
             ngramqueue += [(ngobj['id'], ngobj)]
             # these edges are used to cache labels, see tokenizer
             self.whitelist.addEdge( 'form_label', ngid, label )
             
         self.file.close()
-        ### insert/update document
+        # inserts/updates database
         self.whitelist.storage.insertManyNGram( ngramqueue )
         return self.whitelist
 
@@ -99,19 +100,17 @@ class Exporter(basecsv.Exporter):
 
     filemodel = WhitelistFile()
 
-    def write_whitelist(self, newwl, corporaId, minoccs=0, status=None, userwhitelist=None):
+    def write_whitelist(self, newwl, corporaId, minoccs=0, status=None):
         """
         Writes a Whitelist object to a file
         """
         self.writeRow([x[1] for x in self.filemodel.columns])
         totalexported = 0
-
+        prewlcount = 0
         corpusCache = {}
         corporaObj = newwl.storage.loadCorpora(corporaId)
         
         if corporaObj is None:
-            #raise Exception("corpora %s not found, impossible to export whitelist"%newwl.label)
-            #return
             logging.warning("no corpora found in database, export will be partial")
 
         if corporaObj is not None:
@@ -129,13 +128,14 @@ class Exporter(basecsv.Exporter):
                     continue
                 if isinstance(ng, ngram.NGram):
                     ng.updateMajorForm()
-                if status is None:
-                    if userwhitelist is not None and userwhitelist.test(ng):
-                        ng['status'] = "w"
-                    else:
-                        ng['status'] = ""
-                else:
+                # pre-write status or ""
+                ng['status'] = ""
+                if isinstance(status, str):
                     ng['status'] = status
+                elif isinstance(status, whitelist.Whitelist):
+                    if status.test(ng) is True:
+                        prewlcount += 1
+                        ng['status'] = "w"
 
                 # prepares some score values
                 occsn = occs**len(ng['content'])
@@ -181,12 +181,14 @@ class Exporter(basecsv.Exporter):
                     float(maxnormalizedperiod),
                     unicode(maxnormalizedperiodid),
                     unicode(corp_list),
-                    unicode(doc_list)
+                    unicode(doc_list),
+                    unicode(ngid)
                 ]
                 totalexported += 1
                 self.writeRow(row)
 
         except StopIteration:
-            _logger.debug( "%d ngrams exported after filtering" %totalexported )
+            _logger.debug("%d pre-whitelisted ngrams"%prewlcount)
+            _logger.debug("%d ngrams exported after filtering" %totalexported)
             self.file.close()
             return self.filepath

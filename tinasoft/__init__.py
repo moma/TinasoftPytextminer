@@ -233,9 +233,14 @@ class PytextminerFlowApi(PytextminerFileApi):
             yield self.STATUS_ERROR
             return
         except StopIteration:
-            master_user_whitelist = self._import_whitelist(self.config['general']['userwhitelist'])
             whitelist_exporter = Writer("whitelist://"+outpath)
-            whitelist_exporter.write_whitelist(newwl, corporaObj.id, minoccs=minoccs, userwhitelist=master_user_whitelist)
+            try:
+                master_user_whitelist = self._import_whitelist(self.config['general']['userwhitelist'])
+                self.logger.debug( "user whitelist found, contains %d valid NGrams"%len(master_user_whitelist['edges']['form_label'].keys()) )
+                whitelist_exporter.write_whitelist(newwl, corporaObj.id, minoccs=minoccs, status=master_user_whitelist)
+            except Exception:
+                self.logger.warning("user whitelist not found at %s"%self.config['general']['userwhitelist'])
+                whitelist_exporter.write_whitelist(newwl, corporaObj.id, minoccs=minoccs, status="")
             yield abspath(outpath)
             return
 
@@ -243,8 +248,7 @@ class PytextminerFlowApi(PytextminerFileApi):
             path,
             dataset,
             whitelistpath,
-            format='tinacsv',
-            overwrite=False,
+            format='tinacsv'
         ):
         """
         pytextminer's indexation controler : whitelist + source file => session database
@@ -273,8 +277,7 @@ class PytextminerFlowApi(PytextminerFileApi):
                 corporaObj,
                 [importedwl],
                 stemmer.Identity(),
-                tokenizer.NLemmaTokenizer,
-                whitelist=importedwl
+                tokenizer.NLemmaTokenizer
             )
             extractorGenerator = extract.index()
             
@@ -329,7 +332,6 @@ class PytextminerFlowApi(PytextminerFileApi):
         specially cooccurrences used for further graph generation
         """
         self.logger.debug("starting graph_preprocess")
-
         storage = self.get_storage(dataset, create=True, drop_tables=False)
         if storage == self.STATUS_ERROR:
             yield self.STATUS_ERROR
@@ -384,7 +386,6 @@ class PytextminerFlowApi(PytextminerFileApi):
                     ngramsubgraph_gen.next()
             except StopIteration:
                 self.logger.debug("exporting master whitelist")
-
                 whitelistlabel = "%s_master"%datasetObj['id']
                 outpath = self._get_whitelist_filepath(whitelistlabel)
                 # this whitelist == dataset
