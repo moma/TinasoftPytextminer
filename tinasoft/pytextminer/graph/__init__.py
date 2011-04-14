@@ -56,6 +56,7 @@ def process_ngram_subgraph(
                     process_period.id
                 )
             )
+    # when calculated and aggregated, values go to graphwriter
     load_subgraph_gen = graphwriter.load_subgraph( 'NGram', ngram_matrix_reducer, subgraphconfig=ngramgraphconfig)
     try:
         while 1:
