@@ -107,7 +107,7 @@ class TinasoftServerRequest(resource.Resource):
 
 class CooperativeExecution(object):
     argument_types = {
-        'overwrite': bool,
+        #'overwrite': bool,
         'path': str,
         'outpath': str,
         'dataset': str,
