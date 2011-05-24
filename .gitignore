@@ -18,3 +18,4 @@ scripts/
 shared/nltk_data
 shared/tagger.pickle
 shared/gexf/*.cache
+Microsoft.VC90.CRT 
