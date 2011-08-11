@@ -43,7 +43,8 @@ def _write_binary_file(filename, content):
                 os.remove(filename)
                 os.rename(tmpfile, filename)
 
-tenjin._write_binary_file = _write_binary_file
+# patch is not needed anymore with Tenjin 1.0.2
+#tenjin._write_binary_file = _write_binary_file
 
 # tinasoft logger
 import logging
