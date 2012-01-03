@@ -48,18 +48,24 @@ class Importer(BaseImporter):
     which is encoded in the given encoding.
     """
     options = {
-        'dialect': 'excel',
+        'dialect': 'auto', # 'excel'
         'encoding': 'utf_8'
     }
 
     def __init__(self, path, **kwargs):
         BaseImporter.__init__(self, path, **kwargs)
         # gets columns names
-        f1 = self.open( path )
+        f1 = self.open( path, "rb" )
         if f1 is None:
             return
         
-        tmp = csv.reader( f1, dialect=self.dialect)
+        dialect = self.dialect
+        if dialect == "auto":
+            csvfile = open("tinacsv_test_3.csv", "rb")
+            dialect = csv.Sniffer().sniff(f1.read(10000))
+            f1.seek(0)
+        tmp = csv.reader(f1, dialect)
+
         #tmp = csv.reader( f1, dialect=kwargs['dialect'], quoting=csv.QUOTE_NONNUMERIC )
         self.fieldnames = tmp.next()
         del f1, tmp

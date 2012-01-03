@@ -41,12 +41,12 @@ datasets:
             corpus_id: 'corp_id'
             id: 'doc_id'
             # optionnal fields
-            keywords: 'keywords'
             title: 'title'
             acronym: 'acronym'
+            keywords: 'keywords'
         # csv reader params
         encoding: 'utf_8'
-        dialect: 'excel'
+        dialect: 'auto' # 'excel' to force ";"
     # pubmed.gov "medline" file export
     medline:
         # doc_label represents one of the field's key

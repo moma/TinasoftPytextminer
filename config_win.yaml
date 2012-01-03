@@ -33,7 +33,7 @@ datasets:
     tinacsv:
         # doc_label represents one of the field's key
         # if not found in the file, will use the field specified by "label"
-        doc_label: 'title'
+        doc_label: 'acronym'
         fields:
             # required fields
             label: 'doc_id'
@@ -46,7 +46,7 @@ datasets:
             keywords: 'keywords'
         # csv reader params
         encoding: 'utf_8'
-        dialect: 'excel'
+        dialect: 'auto' # 'excel' to force ";"
     # pubmed.gov "medline" file export
     medline:
         # doc_label represents one of the field's key
