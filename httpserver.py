@@ -31,9 +31,9 @@ from twisted.web.resource import NoResource
 import numpy
 import jsonpickle
 
-# Configure NLTK (hack for Mac Plateforms
+# Configure NLTK (hack for Mac Plateforms)
 import nltk
-nltk.data.path += [  '/Applications/Tinasoft.app/Contents/Resources/shared/nltk_data' ]
+nltk.data.path += [  '/Applications/Tinasoft/shared/nltk_data' ]
 
 # parsing uri components
 from urlparse import parse_qs
