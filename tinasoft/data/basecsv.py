@@ -24,6 +24,8 @@ import csv
 import logging
 _logger = logging.getLogger('TinaAppLogger')
 
+_dialect = "excel"
+
 class UTF8Recoder(object):
     """
     Iterator that reads an encoded stream and reencodes the input to UTF_8
@@ -63,6 +65,7 @@ class Importer(BaseImporter):
         if dialect == "auto":
             csvfile = open("tinacsv_test_3.csv", "rb")
             dialect = csv.Sniffer().sniff(f1.read(10000))
+            _dialect = dialect
             f1.seek(0)
         tmp = csv.reader(f1, dialect)
 
@@ -121,7 +124,7 @@ class Exporter(BaseExporter):
     # defaults
     options = {
         'encoding': 'utf_8',
-        'delimiter': ',',
+        'delimiter': ';',
         'quotechar': '"',
     }
 
