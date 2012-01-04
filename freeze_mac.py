@@ -15,7 +15,7 @@ DATA_FILES = []
 
 OPTIONS = {
     'argv_emulation': True,
-    'argv_inject': "config_unix.yaml",
+    'argv_inject': "../config.yaml",
     'includes': ['tinasoft.data.gexf','tinasoft.data.medline','tinasoft.data.tinasqlite','tinasoft.data.tinacsv','tinasoft.data.whitelist','tinasoft.data.coocmatrix','tinasoft.data.basecsv','traceback','zope.interface','twisted','nltk','numpy','jsonpickle','yaml','tenjin','simplejson','twisted.web','twisted.internet','encodings'],
     'excludes': ['_gtkagg', '_tkagg', 'curses', 'email', 'tcl',
             'Tkconstants', 'Tkinter','tinasoft.data.tinabsddb','bsddb3'],
