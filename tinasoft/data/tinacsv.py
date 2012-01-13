@@ -30,7 +30,8 @@ class Importer (sourcefile.Importer, basecsv.Importer):
     # defaults
     options = {
         'encoding': 'utf_8',
-        'dialect': 'excel',
+        'dialect_read': 'auto',
+        'dialect_write' : 'auto'
     }
     
     def __init__(self, path, **kwargs):

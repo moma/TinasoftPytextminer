@@ -46,7 +46,27 @@ datasets:
             keywords: 'keywords'
         # csv reader params
         encoding: 'utf_8'
-        dialect: 'auto' # 'excel' to force ";"
+        #
+        # CSV dialects. 
+        #
+        # Possible choices: 
+        #   auto, excel, excel-tab, excel-comma, excel-semicolon
+        #
+        # auto: will try to detect when importing a csv file
+        # excel: Microsoft Excel will use current LOCALE to determine either "," or ";"
+        # excel-tab: tab-separated
+        # excel-comma: comma-separated
+        # excel-semicolon: semicolon-separated
+        #
+        # Guidelines:
+        #   
+        # dialect_read: used for importing a CSV file. Maybe you want to leave this to "auto"
+        #               except if your spreadsheet messed something, and indexing fails
+        #
+        # dialect_write: used to write to a CSV file. If "auto" don't work, you HAVE to edit this.
+
+        dialect_read: 'auto'
+        dialect_write: 'auto'
     # pubmed.gov "medline" file export
     medline:
         # doc_label represents one of the field's key

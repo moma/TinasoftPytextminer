@@ -20,6 +20,18 @@ from tinasoft.data import Importer as BaseImporter
 
 import codecs
 import csv
+class ExcelComma (csv.excel):
+    def __init__(self):
+        csv.excel.__init(self)
+        self.delimiter = ","   
+csv.register_dialect("excel-comma",ExcelComma)
+csv.register_dialect("auto",ExcelComma)
+class ExcelSemicolon (csv.excel):
+    def __init__(self):
+        csv.excel.__init(self)
+        self.delimiter = ","   
+csv.register_dialect("excel-semicolon",ExcelSemicolon)
+
 
 import logging
 _logger = logging.getLogger('TinaAppLogger')
@@ -42,13 +54,14 @@ class UTF8Recoder(object):
         encodedline = self.utf8encoder( self.decodedreader.next(), 'ignore' )
         return encodedline[0]
 
+
 class Importer(BaseImporter):
     """
     A CSV reader which will iterate over lines in the CSV file "f",
     which is encoded in the given encoding.
     """
     options = {
-        'dialect': 'auto', # 'excel'
+        'dialect_read': 'auto', # 'excel'
         'encoding': 'utf_8'
     }
 
@@ -59,11 +72,23 @@ class Importer(BaseImporter):
         if f1 is None:
             return
         
-        dialect = self.dialect
+        dialect = self.dialect_read
         if dialect == "auto":
-            dialect = csv.Sniffer().sniff(open(path,"rb").read(10000))
-            #print "delimiter: %s"%dialect.delimiter
+            if dialect in csv.list_dialects():
+                # auto is really auto! we recompute it each time..
+                csv.unregister_dialect("auto")
+                print "cleaning auto dialect"
+            if dialect not in csv.list_dialects():
+                csv.register_dialect("auto",csv.Sniffer().sniff(open(path,"rb").read(10000)))
+                print "registered auto dialect"
+
+            # failure to detect using auto?
+            if dialect not in csv.list_dialects():
+                dialect = self.dialect_read = "excel"
+
+        print "delimiter: %s"% csv.get_dialect(dialect).delimiter
         #print "dialect: %s"%dialect
+        
         tmp = csv.reader(f1, dialect=dialect)
 
         #tmp = csv.reader( f1, dialect=kwargs['dialect'], quoting=csv.QUOTE_NONNUMERIC )
@@ -121,8 +146,7 @@ class Exporter(BaseExporter):
     # defaults
     options = {
         'encoding': 'utf_8',
-        'delimiter': ';',
-        'quotechar': '"',
+        'dialect_write': 'auto'
     }
 
     def __init__( self, filepath, **kwargs ):
@@ -138,11 +162,27 @@ class Exporter(BaseExporter):
         writes a csv row to the file handler
         """
         line=[]
+        dialect = self.dialect_write
+        delimiter = ","
+        quotechar = '"'
+        iquotechar = "'"
+        if dialect in csv.list_dialects():
+            dial = csv.get_dialect(dialect)
+            delimiter = dial.delimiter
+            quotechar = dial.quotechar
+        if quotechar == "'": iquotechar = '"'
+        if quotechar == '"': iquotechar = "'"
+
+        print "will use delimiter %s to write to CSV" % delimiter
+            
         try:
             for cell in row:
                 if isinstance(cell, str) is True or isinstance(cell, unicode) is True:
                     # there should not be " in cells !!
-                    line += ["".join([self.quotechar,cell.replace('"',"'"),self.quotechar])]
+                    print "\ncell: %s"%cell
+                    print "fixed cell: %s"% "".join([quotechar,cell.replace(quotechar,iquotechar),quotechar])
+                    line += ["".join([quotechar,cell.replace(quotechar,iquotechar),quotechar])]
+                    
                 elif isinstance(cell, float) is True:
                     #line += ["".join([self.quotechar,"%.2f"%round(cell,2),self.quotechar])]
                     # AVOID OPENOFFICE FLOAT TO DATE AUTO CONVERSION !!!!
