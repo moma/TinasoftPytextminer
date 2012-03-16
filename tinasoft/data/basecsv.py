@@ -86,7 +86,10 @@ class Importer(BaseImporter):
             if dialect not in csv.list_dialects():
                 dialect = self.dialect_read = "excel"
 
-        print "delimiter: %s"% csv.get_dialect(dialect).delimiter
+        try:
+            print "tried delimiter: %s"% csv.get_dialect(dialect).delimiter
+        except:
+            print "had to use: ,"
         #print "dialect: %s"%dialect
         
         tmp = csv.reader(f1, dialect=dialect)
@@ -157,10 +160,15 @@ class Exporter(BaseExporter):
     def __del__(self):
         self.file.close()
 
+
+    # TODO put all this slow delimiter code in the constructor to accelerate
     def writeRow( self, row ):
         """
         writes a csv row to the file handler
         """
+
+
+
         line=[]
         dialect = self.dialect_write
         delimiter = ","
@@ -168,8 +176,19 @@ class Exporter(BaseExporter):
         iquotechar = "'"
         if dialect in csv.list_dialects():
             dial = csv.get_dialect(dialect)
-            delimiter = dial.delimiter
-            quotechar = dial.quotechar
+
+            try:
+                delimiter = dial.delimiter
+            except:
+                print "couldn't load delimiter from dialect %s" % dialect
+                print "so we will be using %s" % delimiter
+
+            try:
+                quotechar = dial.quotechar
+            except:
+                print "couldn't load quotechar from dialect %s" % dialect
+                print "so we will be using %s" % quotechar
+
         if quotechar == "'": iquotechar = '"'
         if quotechar == '"': iquotechar = "'"
 
@@ -190,7 +209,7 @@ class Exporter(BaseExporter):
                 else:
                     line += [str(cell)]
 
-            self.file.write( self.delimiter.join(line) + "\n" )
+            self.file.write( delimiter.join(line) + "\n" )
         except Exception, ex:
             _logger.error("error basecsv.Exporter : %s"%ex)
 
