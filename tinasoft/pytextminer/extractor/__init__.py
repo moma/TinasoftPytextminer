@@ -93,8 +93,6 @@ class Extractor():
         ngramqueue = []
         storedDoc = self.storage.loadDocument( document['id'] )
         for ngid, ng in docngrams.iteritems():
-            if ng['label']=='vehicle':
-                _logger.debug(document['id'])
             ### document is new
             if storedDoc is None:
                 ng.newToGraph(document, self.corpusDict[ corpusId ])
@@ -130,7 +128,7 @@ class Extractor():
         self.corpora.addEdge( 'Corpus', corpusId, 1 )
         self.corpusDict[ corpusId ].addEdge( 'Corpora', self.corpora['id'], 1)
 
-    def index(self):
+    def index(self, whitelist=None):
         """
         Main method indexing a data source to the storage
         parses a source file, then tokenizes, groups and filters NGrams
@@ -147,7 +145,8 @@ class Extractor():
                     self.config,
                     self.filters,
                     self.tagger,
-                    self.stemmer
+                    self.stemmer,
+                    whitelist
                 )
                 self._linkAndStore(docngrams, document, corpus['id'])
                 doccount += 1

@@ -284,7 +284,7 @@ class PytextminerFlowApi(PytextminerFileApi):
             stemmer.Identity(),
             tokenizer.NLemmaTokenizer
         )
-        extractorGenerator = extract.index()
+        extractorGenerator = extract.index(importedwl)
         try:
             while 1:
                 extractorGenerator.next()
@@ -352,6 +352,7 @@ class PytextminerFlowApi(PytextminerFileApi):
                 self.logger.warning("in graph_preprocess() : period %s not found in database"%corpusid)
                 continue
             ngram_index = set( period.edges['NGram'].keys() )
+
             doc_index = set( period.edges['Document'].keys() )
             if len(ngram_index) == 0:
                 self.logger.warning("period %s has NO NGram indexed, skipping graph_preprocess"%period.id)
