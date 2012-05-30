@@ -103,7 +103,7 @@ datamining:
     # default values if no params are passed to gexf exporter
     DocumentGraph:
         edgethreshold:
-            - 0.0001
+            - 0.000
             - inf
         nodethreshold:
             - 0.00
@@ -113,7 +113,7 @@ datamining:
         maxdegree: 100
     NGramGraph:
         edgethreshold:
-            - 0.0001
+            - 0.0000
             - inf
         nodethreshold:
             - 0.00
