@@ -106,7 +106,7 @@ class MatrixReducer(Matrix):
             for key2, value in row.iteritems():
                 if self.matrix[key2][key2] < minnode or self.matrix[key2][key2] > maxnode:
                     continue
-                if key2 == key1: continue
+                #if key2 == key1: continue
                 # converts any numpy.float to python float
                 valid_row[key2] = float(value)
             if len(valid_row.keys()) > 0:
@@ -158,7 +158,7 @@ class MatrixReducerMaxDegree(MatrixReducerFilter):
         Gets row of filtered nodes and yields row of filtered edges
         """
         matrix = super(MatrixReducerMaxDegree, self).extract_matrix( config )
-        maxdegree = config['maxdegree']
+        maxdegree = int(config['maxdegree'])
         try:
             while 1:
                 nodei, filteredrow = matrix.next()
@@ -187,7 +187,7 @@ class PseudoInclusion(MatrixReducer):
     then extract pseudo-inclusion on the fly
     """
     def extract_matrix( self, config, **kwargs ):
-        alpha = config['alpha']
+        alpha = float(config['alpha'])
         minedges = float(config['edgethreshold'][0])
         maxedges = float(config['edgethreshold'][1])
         matrix = super(PseudoInclusion, self).extract_matrix( config )
@@ -225,7 +225,7 @@ class EquivalenceIndex(MatrixReducer):
         """
         extract_matrix with an equivalence index proximity calculator
         """
-        nb_documents = config['nb_documents']
+        nb_documents = int(config['nb_documents'])
         minedges = float(config['edgethreshold'][0])
         maxedges = float(config['edgethreshold'][1])
         matrix = super(EquivalenceIndex, self).extract_matrix( config )
@@ -239,7 +239,7 @@ class EquivalenceIndex(MatrixReducer):
                     occj = self.get(nodej, nodej)
                     # calculates the e-index
                     brut = float(cooc * nb_documents) / float(occi * occj)
-                    if brut <= 0: continue
+                    #if brut < 0: continue
                     value = math.log( brut )
                     if maxedges is None and value < minedges:
                         del row[nodej]

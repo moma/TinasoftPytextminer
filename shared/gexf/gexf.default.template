@@ -57,6 +57,7 @@
                 <?py for targetcategory in sourceobj['edges'].keys(): ?>
                     <?py if targetcategory in categories: ?>
                         <?py for target, weight in sourceobj['edges'][targetcategory].iteritems(): ?>
+                            <?py if source == target: continue ?>
                             <?py if target not in nodes[targetcategory]: continue ?>
                             <?py if weight == 0.0: continue ?>
                             <?py weight = "%.6f"%round(weight,6) ?>
