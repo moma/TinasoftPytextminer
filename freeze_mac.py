@@ -14,7 +14,10 @@ APP = ['Tinasoft.py']
 DATA_FILES = []
 
 OPTIONS = {
-    'argv_emulation': True,
+    
+    # I love python "error: argv-emulation is not supported for 64-bit executables"
+    #'argv_emulation': True, 
+    
     'argv_inject': "/Applications/Tinasoft/config.yaml",
     'includes': ['tinasoft.data.gexf','tinasoft.data.medline','tinasoft.data.tinasqlite','tinasoft.data.tinacsv','tinasoft.data.whitelist','tinasoft.data.coocmatrix','tinasoft.data.basecsv','traceback','zope.interface','twisted','nltk','numpy','jsonpickle','yaml','tenjin','simplejson','twisted.web','twisted.internet','encodings'],
     'excludes': ['_gtkagg', '_tkagg', 'curses', 'email', 'tcl',
